@@ -1,9 +1,8 @@
 import json
 
 def lambda_handler(event, context):
-    print("this is docker lambda and sqs messages")
-    print(json.dumps(event, indent=2))
-    print("this is docker lambda and sqs messages")
-    return {
-        "statusCode": 200
-    }
+    print("This lambda was execute with a Docker Image")
+    for record in event["Records"]:
+        print("This is body Message : ",record["Body"])
+    
+    
