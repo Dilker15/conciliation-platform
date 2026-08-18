@@ -1,6 +1,7 @@
 from services.s3_service import S3Service
 from services.decompressor_service import Decompressor
 from services.csv_reader_service import CSVReader
+import time
 
 
 class Worker:
@@ -14,11 +15,12 @@ class Worker:
 
 
     def process(self,bucket_name:str,key:str):
+        start = time.perf_counter()
         stream = self._s3_service.read_stream(bucket_name=bucket_name,key=key)
         decompressed_stream = self._decompressor.decompress(stream=stream)
         i=0
         for row in self._csv_reader.read(decompressed_stream):
-            print("ROW DECOMMPRESSED IN CHUNK : ",row)
             i+=1
 
-        print("RECORDS IN CHUNK PROCESSED DECOMPRESSED : ",i)
+        elapsed = time.perf_counter() - start
+        print(f"Se procesaron {i} registros en {elapsed:.4f} segundos")
