@@ -1,8 +1,8 @@
 import json
-from src.services.worker_service import Worker
-from src.services.s3_service import S3Service
-from src.services.csv_reader_service import CSVReader
-from src.services.decompressor_service import Decompressor
+from services.worker_service import Worker
+from services.s3_service import S3Service
+from services.csv_reader_service import CSVReader
+from services.decompressor_service import Decompressor
 
 worker = Worker(
     csv_reader= CSVReader(),
