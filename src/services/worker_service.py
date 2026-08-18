@@ -1,6 +1,6 @@
-from s3_service import S3Service
-from decompressor_service import Decompressor
-from csv_reader_service import CSVReader
+from services.s3_service import S3Service
+from services.decompressor_service import Decompressor
+from services.csv_reader_service import CSVReader
 
 
 class Worker:
