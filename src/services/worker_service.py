@@ -3,6 +3,7 @@ from services.decompressor_service import Decompressor
 from services.csv_reader_service import CSVReader
 import time
 from models.settlement import Settlement
+from models.settlement_errors import SettlementError
 from services.settlement_parser_service import SettlementParser
 from services.settlement_service import SettlementService
 
@@ -28,22 +29,36 @@ class Worker:
         total_processed = 0
         total_invalid  = 0
         batch_parsed:list[Settlement] = []
+        batch_errors:list[SettlementError] = []
 
         for row in self._csv_reader.read(decompressed_stream):
+            total_processed+=1
             try:
                 settlement = self._parse.parse(row=row,file_id=file_id)
-                self._settlement_service.create_settlement(settlement=settlement)
                 batch_parsed.append(settlement)
             except ValueError as exc:
                 total_invalid += 1
-                print(f"[PARSER] Invalid row : {exc}")
+                settlement_error = self._parse.parse_erros(row_data=row,file_id=file_id,settlement_id=row.get("settlement_id"),error=exc,row_number=total_processed)
+                batch_errors.append(settlement_error)
+                #print(f"[PARSER] Invalid row : {exc}")
                 continue
 
-            if len(batch_parsed) == 1:  # maximun batch size to write in DynamoDB 25
+            if len(batch_parsed) == 25:  # maximun batch size to write in DynamoDB 25
                 #self._settlement_service.create_settlement(batch_parsed[0])
+                self._settlement_service.create_settlement_batch(settlements=batch_parsed)
                 batch_parsed.clear()
-            total_processed+=1
-            
+            if len(batch_errors) == 25:
+                # insertar errores de a 25 igual
+                print("ERRORS SETTLEMENTS :",batch_errors)
+                #batch_errors.clear()
+
+
+        if batch_parsed:
+            self._settlement_service.create_settlement_batch(settlements=batch_parsed)
+
+        if batch_errors:
+            print("clean error_batch")
+            #insertar datos en error services los restantes
 
         elapsed = time.perf_counter() - start
         print(

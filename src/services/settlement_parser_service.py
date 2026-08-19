@@ -1,5 +1,6 @@
 
 from models.settlement import Settlement
+from models.settlement_errors import SettlementError
 from decimal import Decimal
 from datetime import datetime
 
@@ -19,6 +20,15 @@ class SettlementParser:
             currency=self._required(row, "currency").upper(),
             settlement_status=self._required(row,"settlement_status").upper(),
             settlement_date=self._parse_date(row["settlement_date"]),
+        )
+    
+    def parse_erros(self,row_data:dict,file_id:str,settlement_id:str,error:str,row_number:int)->SettlementError:
+        return SettlementError(
+            error=error,
+            file_id=file_id,
+            raw_data=row_data,
+            row_number=row_number,
+            settlement_id=settlement_id,
         )
     
     

@@ -9,5 +9,5 @@ class SettlementService:
     def __init__(self,repository:SettlementRepository):
         self._repository = repository
 
-    def create_settlement(self,settlement:Settlement)->None:
-        self._repository.create_settlement(settlement=settlement)
+    def create_settlement_batch(self,settlements:list[Settlement])->None:
+        self._repository.create_settlement_batch(settlements=settlements)
