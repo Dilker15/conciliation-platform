@@ -51,6 +51,4 @@ class SettlementRepository:
         print(
             f"[DYNAMODB] Settlements created: "
             f"{len(settlements)}"
-            f"[RESPONSE DYNAMODB] response :"
-            f"{response}"
         )
