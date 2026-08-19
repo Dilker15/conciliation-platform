@@ -32,6 +32,7 @@ class Worker:
         for row in self._csv_reader.read(decompressed_stream):
             try:
                 settlement = self._parse.parse(row=row,file_id=file_id)
+                self._settlement_service.create_settlement(settlement=settlement)
                 batch_parsed.append(settlement)
             except ValueError as exc:
                 total_invalid += 1
@@ -39,7 +40,7 @@ class Worker:
                 continue
 
             if len(batch_parsed) == 1:  # maximun batch size to write in DynamoDB 25
-                self._settlement_service.create_settlement(batch_parsed[0])
+                #self._settlement_service.create_settlement(batch_parsed[0])
                 batch_parsed.clear()
             total_processed+=1
             
