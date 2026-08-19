@@ -14,7 +14,7 @@ class SettlementParser:
         return Settlement(
             file_id=file_id,
             settlement_id=self._required(row, "settlement_id"),
-            transaction_reference=self._required(row,"transaction_reference"),
+            transaction_id=self._required(row,"transaction_reference"),
             provider_name=self._required(row,"provider_name").upper(),
             settled_amount=self._parse_amount(row["settled_amount"]),
             currency=self._required(row, "currency").upper(),
