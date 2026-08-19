@@ -40,7 +40,7 @@ class Worker:
                 batch_parsed.append(settlement)
             except ValueError as exc:
                 total_invalid += 1
-                settlement_error = self._parse.parse_erros(row_data=row,file_id=file_id,settlement_id=row.get("settlement_id"),error=exc,row_number=total_processed)
+                settlement_error = self._parse.parse_erros(row_data=row,file_id=file_id,settlement_id=row.get("settlement_id"),error=str(exc),row_number=total_processed)
                 batch_errors.append(settlement_error)
                 continue
 
