@@ -10,4 +10,4 @@ class SettlementErrorService:
         self._repository = repository
 
     def create_settlement_error_batch(self,settlements:list[SettlementError])->None:
-        self._repository.create_settlement_error_batch(settlements=settlements)
+        self._repository.create_settlement_error_batch(settlement_errors=settlements)
