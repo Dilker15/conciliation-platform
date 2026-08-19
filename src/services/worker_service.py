@@ -4,17 +4,19 @@ from services.csv_reader_service import CSVReader
 import time
 from models.settlement import Settlement
 from services.settlement_parser_service import SettlementParser
+from services.settlement_service import SettlementService
 
 
 class Worker:
 
 
 
-    def __init__(self,s3_service:S3Service,decompressor:Decompressor,csv_reader:CSVReader,parser:SettlementParser):
+    def __init__(self,s3_service:S3Service,decompressor:Decompressor,csv_reader:CSVReader,parser:SettlementParser,settlement_serv:SettlementService):
         self._s3_service= s3_service
         self._decompressor = decompressor
         self._csv_reader = csv_reader
         self._parse = parser
+        self._settlement_service = settlement_serv
 
 
     def process(self,bucket_name:str,key:str,file_id:str):
@@ -36,8 +38,8 @@ class Worker:
                 print(f"[PARSER] Invalid row : {exc}")
                 continue
 
-            if len(batch_parsed) == 25:  # maximun batch size to write in DynamoDB 25
-                # insertar en dynamo de a 25
+            if len(batch_parsed) == 1:  # maximun batch size to write in DynamoDB 25
+                self._settlement_service.create_settlement(batch_parsed[0])
                 batch_parsed.clear()
             total_processed+=1
             
