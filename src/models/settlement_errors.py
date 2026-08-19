@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SettlementParseError:
+class SettlementError:
     file_id: str
     row_number: int
     error: str
