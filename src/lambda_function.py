@@ -15,8 +15,6 @@ worker = Worker(
 )
 
 def lambda_handler(event, context):
-    print("This lambda was executed with a Docker Image")
-
     for record in event["Records"]:
         body = json.loads(record["body"])
         bucket_key = body["key"]

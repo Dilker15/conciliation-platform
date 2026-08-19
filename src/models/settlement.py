@@ -6,7 +6,7 @@ from decimal import Decimal
 @dataclass
 class Settlement:
     settlement_id: str
-    transaction_reference: str
+    transaction_id: str
     provider_name: str
     settled_amount: Decimal
     currency: str
