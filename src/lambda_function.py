@@ -18,7 +18,7 @@ worker = Worker(
     parser= SettlementParser(),
     settlement_serv=SettlementService(SettlementRepository()),
     settlement_error_serv=SettlementErrorService(SettlementErrorRespository()),
-    chunk_counter_serv=ChunkCounterService(chunk_counter_repository=ChunkCounterRepository)
+    chunk_counter_serv=ChunkCounterService(chunk_counter_repository=ChunkCounterRepository())
 )
 
 def lambda_handler(event, context):
