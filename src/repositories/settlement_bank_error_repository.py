@@ -42,7 +42,3 @@ class SettlementErrorRespository:
             }
         )
 
-        print(
-            f"[DYNAMODB] Settlement errors created: "
-            f"{len(settlement_errors)}"
-        )

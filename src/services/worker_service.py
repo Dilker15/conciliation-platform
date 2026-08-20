@@ -63,4 +63,5 @@ class Worker:
             f"Processed: {total_processed}, "
             f"Invalid: {total_invalid}, "
             f"Time: {elapsed:.4f}s"
+            f"Chunk Processed: {key}"
         )
