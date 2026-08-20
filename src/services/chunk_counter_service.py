@@ -12,5 +12,4 @@ class ChunkCounterService:
 
 
     def register_chunk_processed(self,file_id:str,chunk_received:int)->None:
-        self._chunk_counter_repository.register_chunk_processed(file_id=file_id,chunk_index=chunk_received)
-        
+        self._chunk_counter_repository.register_chunk_processed(file_id=file_id,chunk_index=chunk_received) 

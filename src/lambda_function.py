@@ -27,5 +27,5 @@ def lambda_handler(event, context):
         bucket_key = body["key"]
         bucket_name=body["bucket"]
         hash_file = body["file_id"]
-        chunk_index=body["chunk_index"]
+        chunk_index=int(body["chunk_index"]) + 1 # index start in 0,1... n , chunk number start 1,2,3..n
         worker.process(bucket_name=bucket_name,key=bucket_key,file_id=hash_file,chunk_received=chunk_index)
