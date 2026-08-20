@@ -47,8 +47,3 @@ class SettlementRepository:
                 "settlements": requests
             }
         )
-
-        print(
-            f"[DYNAMODB] Settlements created: "
-            f"{len(settlements)}"
-        )
