@@ -7,22 +7,31 @@ from models.settlement_errors import SettlementError
 from services.settlement_parser_service import SettlementParser
 from services.settlement_service import SettlementService
 from services.settlement_error_service import SettlementErrorService
+from services.chunk_counter_service import ChunkCounterService
 
 
 class Worker:
 
 
 
-    def __init__(self,s3_service:S3Service,decompressor:Decompressor,csv_reader:CSVReader,parser:SettlementParser,settlement_serv:SettlementService,settlement_error_serv:SettlementErrorService):
+    def __init__(self,s3_service:S3Service,
+                 decompressor:Decompressor,
+                 csv_reader:CSVReader,
+                 parser:SettlementParser,
+                 settlement_serv:SettlementService,
+                 settlement_error_serv:SettlementErrorService,
+                 chunk_counter_serv:ChunkCounterService):
+        
         self._s3_service= s3_service
         self._decompressor = decompressor
         self._csv_reader = csv_reader
         self._parse = parser
         self._settlement_service = settlement_serv
         self._settlement_error_service = settlement_error_serv
+        self._chunk_counter_services = chunk_counter_serv
 
 
-    def process(self,bucket_name:str,key:str,file_id:str):
+    def process(self,bucket_name:str,key:str,file_id:str,chunk_received:int):
         start = time.perf_counter()
 
         stream = self._s3_service.read_stream(bucket_name=bucket_name,key=key)
@@ -58,6 +67,7 @@ class Worker:
         if batch_errors:
             self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
+        self._chunk_counter_services.register_chunk_processed(file_id=file_id,chunk_received=chunk_received)
         elapsed = time.perf_counter() - start
         print(
             f"Processed: {total_processed}, "
