@@ -1,5 +1,5 @@
 
-from repositories.settlement_bank_error_repository import SettlementErrorRespository
+from shared_layer.repositories.settlement_errors_repository import SettlementErrorRespository
 from models.settlement_errors import SettlementError
 
 

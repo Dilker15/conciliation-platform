@@ -1,5 +1,5 @@
 import boto3
-from models.settlement import Settlement
+from shared_layer.models.settlement import Settlement
 
 
 class SettlementRepository:

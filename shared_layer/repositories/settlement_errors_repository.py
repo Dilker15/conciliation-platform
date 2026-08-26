@@ -1,7 +1,7 @@
 import boto3
 from boto3.dynamodb.types import TypeSerializer
 
-from models.settlement_errors import SettlementError
+from shared_layer.models.settlement_errors import SettlementError
 
 
 class SettlementErrorRespository:
