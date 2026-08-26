@@ -5,11 +5,12 @@ from services.csv_reader_service import CSVReader
 from services.decompressor_service import Decompressor
 from services.settlement_parser_service import SettlementParser
 from services.settlement_service import SettlementService
-from repositories.settlement_bank_repository import SettlementRepository
+from shared_layer.repositories.settlement_repository import SettlementRepository
 from services.settlement_error_service import SettlementErrorService
 from services.chunk_counter_service import ChunkCounterService
-from repositories.settlement_bank_error_repository import SettlementErrorRespository
-from shared_layer.repositories.chunk_counter_repository import (ChunkCounterRepository)
+from shared_layer.repositories.settlement_errors_repository import SettlementErrorRespository
+from services.conciliation_file_service import ConciliationFileService
+from shared_layer.repositories.conciliation_repository import RepositoryConciliation
 
 worker = Worker(
     csv_reader= CSVReader(),
@@ -18,7 +19,7 @@ worker = Worker(
     parser= SettlementParser(),
     settlement_serv=SettlementService(SettlementRepository()),
     settlement_error_serv=SettlementErrorService(SettlementErrorRespository()),
-    chunk_counter_serv=ChunkCounterService(chunk_counter_repository=ChunkCounterRepository())
+    conciliation_file=ConciliationFileService(RepositoryConciliation())
 )
 
 def lambda_handler(event, context):
@@ -27,5 +28,4 @@ def lambda_handler(event, context):
         bucket_key = body["key"]
         bucket_name=body["bucket"]
         hash_file = body["file_id"]
-        chunk_index=int(body["chunk_index"]) + 1 # index start in 0,1... n , chunk number start 1,2,3..n
-        worker.process(bucket_name=bucket_name,key=bucket_key,file_id=hash_file,chunk_received=chunk_index)
+        worker.process(bucket_name=bucket_name,key=bucket_key,file_id=hash_file)

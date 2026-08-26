@@ -1,5 +1,5 @@
 
-from repositories.settlement_bank_repository import SettlementRepository
+from shared_layer.repositories.settlement_repository import SettlementRepository
 from models.settlement import Settlement
 
 
@@ -11,3 +11,4 @@ class SettlementService:
 
     def create_settlement_batch(self,settlements:list[Settlement])->None:
         self._repository.create_settlement_batch(settlements=settlements)
+    
