@@ -7,7 +7,6 @@ from services.settlement_parser_service import SettlementParser
 from services.settlement_service import SettlementService
 from shared_layer.repositories.settlement_repository import SettlementRepository
 from services.settlement_error_service import SettlementErrorService
-from services.chunk_counter_service import ChunkCounterService
 from shared_layer.repositories.settlement_errors_repository import SettlementErrorRespository
 from services.conciliation_file_service import ConciliationFileService
 from shared_layer.repositories.conciliation_repository import RepositoryConciliation
