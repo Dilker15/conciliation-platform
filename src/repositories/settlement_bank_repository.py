@@ -14,14 +14,14 @@ class SettlementRepository:
             requests.append({
                 "PutRequest": {
                     "Item": {
-                        "settlement_id": {
-                            "S": settlement.settlement_id
+                        "PK": {
+                            "S": f"FILE#{settlement.file_id}"
+                        },
+                        "SK":{
+                            "S":f"SETTLEMENT#{settlement.settlement_id}"
                         },
                         "transaction_id": {
                             "S": settlement.transaction_id
-                        },
-                        "file_id": {
-                            "S": settlement.file_id
                         },
                         "provider_name": {
                             "S": settlement.provider_name
@@ -44,6 +44,6 @@ class SettlementRepository:
 
         response = self._client.batch_write_item(
             RequestItems={
-                "settlements": requests
+                "files_conciliation": requests
             }
         )
