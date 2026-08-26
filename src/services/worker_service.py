@@ -68,7 +68,7 @@ class Worker:
         if batch_errors:
             self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
-        self._file_conciliation_service.updated_processed_records(file_hash=file_id,errors=total_invalid,success=int(total_processed-total_invalid))
+        self._file_conciliation_service.updated_processed_records(file_hash=file_id,errors=total_invalid,success=int(total_processed-total_invalid),total_proccessed=total_processed)
         elapsed = time.perf_counter() - start
         print(
             f"Processed: {total_processed}, "
