@@ -1,6 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
-from models.chunk import Chunk
+from shared_layer.models.chunk import Chunk
 from datetime import datetime,timezone
 import logging
 import os
