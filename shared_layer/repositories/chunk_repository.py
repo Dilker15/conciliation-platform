@@ -40,9 +40,6 @@ class ChunkRepository:
                 "created_at":{
                     "S":data.created_at.isoformat(),
                 },
-                "fisished_at":{
-                    "S":None
-                }
            }
            self._client.put_item(
                 TableName=self._table_name,
