@@ -86,7 +86,7 @@ class Worker:
                 self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
             self._file_conciliation_service.updated_processed_records(file_hash=file_id,errors=total_invalid,success=total_processed - total_invalid,total_proccessed=total_processed)
-            self._chunk_service.mark_completed(file_id,chunk_id=key)
+            self._chunk_service.mark_completed(file_id,chunk_id=idChunk)
 
         except Exception:
             print(f"Error processing chunk: {key}")
