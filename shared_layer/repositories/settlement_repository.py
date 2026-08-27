@@ -1,11 +1,12 @@
 import boto3
 from shared_layer.models.settlement import Settlement
-
+import os
 
 class SettlementRepository:
 
     def __init__(self):
         self._client = boto3.client("dynamodb")
+        self._table_name = os.environ["CONCILIATION_TABLE_NAME"]
 
     def create_settlement_batch(self, settlements: list[Settlement]):
         requests = []
@@ -44,6 +45,6 @@ class SettlementRepository:
 
         response = self._client.batch_write_item(
             RequestItems={
-                "files_conciliation": requests
+                self._table_name: requests
             }
         )

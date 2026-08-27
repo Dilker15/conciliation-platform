@@ -2,13 +2,15 @@ import boto3
 from boto3.dynamodb.types import TypeSerializer
 
 from shared_layer.models.settlement_errors import SettlementError
-
+import os
 
 class SettlementErrorRespository:
 
     def __init__(self):
         self._client = boto3.client("dynamodb")
         self._serializer = TypeSerializer()
+        self._table_name = os.environ["CONCILIATION_TABLE_NAME"]
+
 
     def create_settlement_error_batch(self,settlement_errors: list[SettlementError]):
         requests = []
@@ -38,7 +40,7 @@ class SettlementErrorRespository:
 
         response = self._client.batch_write_item(
             RequestItems={
-                "files_conciliation": requests
+                self._table_name: requests
             }
         )
 
