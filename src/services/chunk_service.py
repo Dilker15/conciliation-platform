@@ -18,7 +18,7 @@ class ChunkService:
             created_at=datetime.now(timezone.utc),
         )
 
-        return self._chunk_repository.register_chunk_conciliation(chunk_data)
+        return self._chunk_repository.register_chunk_conciliation(data=chunk_data)
     
 
     def mark_completed(self,file_id:str,chunk_id:str)->None:
