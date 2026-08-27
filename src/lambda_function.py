@@ -21,7 +21,7 @@ worker = Worker(
     settlement_serv=SettlementService(SettlementRepository()),
     settlement_error_serv=SettlementErrorService(SettlementErrorRespository()),
     conciliation_file=ConciliationFileService(RepositoryConciliation()),
-    chunk_service=ChunkService(repository=ChunkRepository)
+    chunk_service=ChunkService(repository=ChunkRepository())
 )
 
 def lambda_handler(event, context):
