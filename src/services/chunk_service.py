@@ -27,3 +27,13 @@ class ChunkService:
 
     def mark_failed(self,file_id:str,chunk_id:str,error:str)->None:
         self._chunk_repository.mark_failed(file_id=file_id,chunk_id=chunk_id,error_message=error)
+
+
+    def complete_chunk_and_update_totals(self,file_id: str,chunk_id: str,success_amount: int,errors_amount: int,total_processed: int) -> bool:
+        return self._chunk_repository.complete_chunk_and_update_totals(
+            file_id=file_id,
+            chunk_id=chunk_id,
+            success_amount=success_amount,
+            errors_amount=errors_amount,
+            total_processed=total_processed,
+        )

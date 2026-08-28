@@ -21,7 +21,6 @@ class Worker:
                  parser:SettlementParser,
                  settlement_serv:SettlementService,
                  settlement_error_serv:SettlementErrorService,
-                 conciliation_file:ConciliationFileService,
                  chunk_service:ChunkService
                  ):
         
@@ -31,7 +30,6 @@ class Worker:
         self._parse = parser
         self._settlement_service = settlement_serv
         self._settlement_error_service = settlement_error_serv
-        self._file_conciliation_service = conciliation_file
         self._chunk_service= chunk_service
 
 
@@ -78,11 +76,15 @@ class Worker:
             if batch_errors:
                 self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
-            self._file_conciliation_service.updated_processed_records(
-                file_hash=file_id, errors=total_invalid,
-                success=total_processed - total_invalid, total_proccessed=total_processed,
+            completed = self._chunk_service.complete_chunk_and_update_totals(
+                file_id=file_id,
+                chunk_id=id_chunk,
+                success_amount=total_processed - total_invalid,
+                errors_amount=total_invalid,
+                total_processed=total_processed,
             )
-            self._chunk_service.mark_completed(file_id=file_id, chunk_id=id_chunk)
+            if not completed:
+                print(f"Chunk {key} ya había sido completado en un intento previo, totales no duplicados")
 
         except Exception as e:
             self._chunk_service.mark_failed(file_id=file_id,chunk_id=id_chunk,error=str(e))

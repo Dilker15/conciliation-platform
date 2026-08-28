@@ -20,7 +20,6 @@ worker = Worker(
     parser= SettlementParser(),
     settlement_serv=SettlementService(SettlementRepository()),
     settlement_error_serv=SettlementErrorService(SettlementErrorRespository()),
-    conciliation_file=ConciliationFileService(RepositoryConciliation()),
     chunk_service=ChunkService(repository=ChunkRepository())
 )
 

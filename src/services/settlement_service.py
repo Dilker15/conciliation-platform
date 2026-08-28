@@ -1,6 +1,6 @@
 
 from shared_layer.repositories.settlement_repository import SettlementRepository
-from models.settlement import Settlement
+from shared_layer.models.settlement import Settlement
 
 
 class SettlementService:
