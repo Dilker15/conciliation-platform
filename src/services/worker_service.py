@@ -2,8 +2,8 @@ from services.s3_service import S3Service
 from services.decompressor_service import Decompressor
 from services.csv_reader_service import CSVReader
 import time
-from models.settlement import Settlement
-from models.settlement_errors import SettlementError
+from shared_layer.models.settlement import Settlement
+from shared_layer.models.settlement_errors import SettlementError
 from services.settlement_parser_service import SettlementParser
 from services.settlement_service import SettlementService
 from services.settlement_error_service import SettlementErrorService
