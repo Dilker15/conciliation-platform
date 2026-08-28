@@ -36,17 +36,16 @@ class Worker:
 
 
 
-
-
-
-
     def process(self, bucket_name: str, key: str, file_id: str):
         start = time.perf_counter()
 
         stream = self._s3_service.read_stream(bucket_name=bucket_name,key=key)
+
         decompressed_stream = self._decompressor.decompress(stream=stream)
-        idChunk = key.split(".")[0]
-        registered = self._chunk_service.register_chunk(file_id=file_id,chunk_id=idChunk,bucket_name=bucket_name,bucket_key=key)
+
+        id_chunk = key.removesuffix(".csv.gz")
+
+        registered = self._chunk_service.register_chunk(file_id=file_id,chunk_id=id_chunk,bucket_name=bucket_name,bucket_key=key)
 
         if not registered:
             print("Chunk already registered:", key)
@@ -54,6 +53,7 @@ class Worker:
 
         total_processed = 0
         total_invalid = 0
+
         batch_parsed: list[Settlement] = []
         batch_errors: list[SettlementError] = []
 
@@ -61,15 +61,13 @@ class Worker:
             for row in self._csv_reader.read(decompressed_stream):
                 total_processed += 1
 
-                try:
-                    settlement = self._parse.parse(row=row,file_id=file_id)
-                    batch_parsed.append(settlement)
+                result = self._parse.parse(row=row,file_id=file_id,row_number=total_processed)
 
-                except ValueError as exc:
+                if isinstance(result, SettlementError):
                     total_invalid += 1
-                    settlement_error = self._parse.parse_erros(row_data=row,file_id=file_id,settlement_id=row.get("settlement_id"),error=str(exc),row_number=total_processed)
-                    batch_errors.append(settlement_error)
-                    continue
+                    batch_errors.append(result)
+                else:
+                    batch_parsed.append(result)
 
                 if len(batch_parsed) == 25:
                     self._settlement_service.create_settlement_batch(settlements=batch_parsed)
@@ -86,7 +84,7 @@ class Worker:
                 self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
             self._file_conciliation_service.updated_processed_records(file_hash=file_id,errors=total_invalid,success=total_processed - total_invalid,total_proccessed=total_processed)
-            self._chunk_service.mark_completed(file_id,chunk_id=idChunk)
+            self._chunk_service.mark_completed(file_id=file_id,chunk_id=id_chunk)
 
         except Exception:
             print(f"Error processing chunk: {key}")
