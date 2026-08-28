@@ -23,7 +23,7 @@ class SettlementErrorRespository:
                             "S": f"FILE#{settlement_error.file_id}"
                         },
                         "SK": {
-                            "S": f"ERROR#{settlement_error.settlement_id}"
+                            "S": f"ERROR#{settlement_error.row_number}"
                         },
                         "row_number": {
                             "N": str(settlement_error.row_number)
@@ -43,7 +43,7 @@ class SettlementErrorRespository:
                 }
             })
 
-        response = self._client.batch_write_item(
+        self._client.batch_write_item(
             RequestItems={
                 self._table_name: requests
             }
