@@ -23,3 +23,7 @@ class ChunkService:
 
     def mark_completed(self,file_id:str,chunk_id:str)->None:
         self._chunk_repository.mark_completed(file_id=file_id,chunk_id=chunk_id)
+
+
+    def mark_failed(self,file_id:str,chunk_id:str,error:str)->None:
+        self._chunk_repository.mark_failed(file_id=file_id,chunk_id=chunk_id,error_message=error)

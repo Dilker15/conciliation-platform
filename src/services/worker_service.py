@@ -38,30 +38,26 @@ class Worker:
 
     def process(self, bucket_name: str, key: str, file_id: str):
         start = time.perf_counter()
-
-        stream = self._s3_service.read_stream(bucket_name=bucket_name,key=key)
-
-        decompressed_stream = self._decompressor.decompress(stream=stream)
-
         id_chunk = key.removesuffix(".csv.gz")
 
-        registered = self._chunk_service.register_chunk(file_id=file_id,chunk_id=id_chunk,bucket_name=bucket_name,bucket_key=key)
 
+        registered = self._chunk_service.register_chunk(file_id=file_id,chunk_id=id_chunk,bucket_name=bucket_name,bucket_key=key)
         if not registered:
-            print("Chunk already registered:", key)
+            print("Chunk ya completado o en proceso activo:", key)
             return
 
-        total_processed = 0
-        total_invalid = 0
-
-        batch_parsed: list[Settlement] = []
-        batch_errors: list[SettlementError] = []
-
         try:
+            stream = self._s3_service.read_stream(bucket_name=bucket_name, key=key)
+            decompressed_stream = self._decompressor.decompress(stream=stream)
+
+            total_processed = 0
+            total_invalid = 0
+            batch_parsed: list[Settlement] = []
+            batch_errors: list[SettlementError] = []
+
             for row in self._csv_reader.read(decompressed_stream):
                 total_processed += 1
-
-                result = self._parse.parse(row=row,file_id=file_id,row_number=total_processed)
+                result = self._parse.parse(row=row, file_id=file_id, row_number=total_processed)
 
                 if isinstance(result, SettlementError):
                     total_invalid += 1
@@ -79,24 +75,24 @@ class Worker:
 
             if batch_parsed:
                 self._settlement_service.create_settlement_batch(settlements=batch_parsed)
-
             if batch_errors:
                 self._settlement_error_service.create_settlement_error_batch(batch_errors)
 
-            self._file_conciliation_service.updated_processed_records(file_hash=file_id,errors=total_invalid,success=total_processed - total_invalid,total_proccessed=total_processed)
-            self._chunk_service.mark_completed(file_id=file_id,chunk_id=id_chunk)
+            self._file_conciliation_service.updated_processed_records(
+                file_hash=file_id, errors=total_invalid,
+                success=total_processed - total_invalid, total_proccessed=total_processed,
+            )
+            self._chunk_service.mark_completed(file_id=file_id, chunk_id=id_chunk)
 
-        except Exception:
+        except Exception as e:
+            self._chunk_service.mark_failed(file_id=file_id,chunk_id=id_chunk,error=str(e))
             print(f"Error processing chunk: {key}")
             raise
 
         elapsed = time.perf_counter() - start
-
         print(
-            f"Processed: {total_processed}, "
-            f"Invalid: {total_invalid}, "
-            f"Time: {elapsed:.4f}s "
-            f"Chunk Processed: {key}"
+            f"Processed: {total_processed}, Invalid: {total_invalid}, "
+            f"Time: {elapsed:.4f}s Chunk Processed: {key}"
         )
 
         
