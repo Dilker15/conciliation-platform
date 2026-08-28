@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 
 class ChunkRepository:
-    LEASE_TTL_SECONDS = 300  # TIMEUOUT DE LA LAMBDA PRA CONSIDERA ABANDONADO EL PROCESS DEL CHUNK
+    LEASE_TTL_SECONDS = 300  # TIMEUOUT DE LA LAMBDA PRA CONSIDERA ABANDONADO EL PROCESS DEL CHUNK.
 
     def __init__(self):
         self._client = boto3.client("dynamodb")
@@ -62,21 +62,6 @@ class ChunkRepository:
                 return False
             raise
 
-    def mark_completed(self, file_id: str, chunk_id: str) -> None:
-        now_iso = datetime.now(timezone.utc).isoformat()
-        self._client.update_item(
-            TableName=self._table_name,
-            Key={"PK": {"S": f"FILE#{file_id}"}, "SK": {"S": f"CHUNK#{chunk_id}"}},
-            UpdateExpression="SET #status = :completed, finished_at = :finished_at, updated_at = :finished_at",
-            ExpressionAttributeNames={"#status": "status"},
-            ExpressionAttributeValues={
-                ":completed": {"S": "COMPLETED"},
-                ":processing": {"S": "PROCESSING"},
-                ":finished_at": {"S": now_iso},
-            },
-            ConditionExpression="#status = :processing",
-        )
-
 
     def mark_failed(self, file_id: str, chunk_id: str, error_message: str = "") -> None:
         self._client.update_item(
@@ -90,3 +75,68 @@ class ChunkRepository:
                 ":err": {"S": error_message[:1000]},
             },
         )
+
+    def complete_chunk_and_update_totals(self,file_id: str,chunk_id: str,success_amount: int,errors_amount: int,total_processed: int) -> bool:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        # marcar el chunk como completado y sumar los valores procesados por (FILE INFO) en una transaccion.
+        try:
+            self._client.transact_write_items(
+                TransactItems=[
+                    {
+                        "Update": {
+                            "TableName": self._table_name,
+                            "Key": {
+                                "PK": {"S": f"FILE#{file_id}"},
+                                "SK": {"S": f"CHUNK#{chunk_id}"},
+                            },
+                            "UpdateExpression": (
+                                "SET #status = :completed, "
+                                "finished_at = :now, "
+                                "updated_at = :now"
+                            ),
+                            "ConditionExpression": "#status = :processing",
+                            "ExpressionAttributeNames": {"#status": "status"},
+                            "ExpressionAttributeValues": {
+                                ":completed": {"S": "COMPLETED"},
+                                ":processing": {"S": "PROCESSING"},
+                                ":now": {"S": now_iso},
+                            },
+                        }
+                    },
+                    {
+                        "Update": {
+                            "TableName": self._table_name,
+                            "Key": {
+                                "PK": {"S": f"FILE#{file_id}"},
+                                "SK": {"S": "INFO"},
+                            },
+                            "UpdateExpression": (
+                                "ADD "
+                                "records_successful :success_amount, "
+                                "records_failed :errors_amount, "
+                                "total_records :total_processed, "
+                                "processed_chunks :one "
+                                "SET updated_at = :now"
+                            ),
+                            "ExpressionAttributeValues": {
+                                ":success_amount": {"N": str(success_amount)},
+                                ":errors_amount": {"N": str(errors_amount)},
+                                ":total_processed": {"N": str(total_processed)},
+                                ":one": {"N": "1"},
+                                ":now": {"S": now_iso},
+                            },
+                        }
+                    },
+                ]
+            )
+            return True
+
+        except ClientError as error:
+            if error.response["Error"]["Code"] == "TransactionCanceledException":
+                logger.warning(
+                    "Chunk ya estaba completado, no se vuelven a sumar los totales: "
+                    "file_id=%s chunk_id=%s",
+                    file_id, chunk_id,
+                )
+                return False
+            raise

@@ -1,6 +1,6 @@
 
 from shared_layer.repositories.settlement_errors_repository import SettlementErrorRespository
-from models.settlement_errors import SettlementError
+from shared_layer.models.settlement_errors import SettlementError
 
 
 class SettlementErrorService:
