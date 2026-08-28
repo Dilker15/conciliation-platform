@@ -1,8 +1,8 @@
 from decimal import Decimal
 from datetime import datetime
 
-from models.settlement import Settlement
-from models.settlement_errors import SettlementError
+from shared_layer.models.settlement import Settlement
+from shared_layer.models.settlement_errors import SettlementError
 
 
 class SettlementParser:

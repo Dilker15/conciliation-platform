@@ -6,5 +6,5 @@ class SettlementError:
     settlement_id:str
     file_id: str
     row_number: int
-    error: str
+    errors: list[str]
     raw_data: dict
