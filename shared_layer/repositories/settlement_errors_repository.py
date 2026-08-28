@@ -29,7 +29,7 @@ class SettlementErrorRespository:
                             "N": str(settlement_error.row_number)
                         },
                         "error": {
-                            "S": settlement_error.error
+                            "S": settlement_error.errors
                         },
                         "raw_data": self._serializer.serialize(
                             settlement_error.raw_data

@@ -74,7 +74,7 @@ class Worker:
                     batch_parsed.clear()
 
                 if len(batch_errors) == 25:
-                    self._settlement_error_service.create_settlement_error_batch(batch_errors)
+                    self._settlement_error_service.create_settlement_error_batch(settlements=batch_errors)
                     batch_errors.clear()
 
             if batch_parsed:
