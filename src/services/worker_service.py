@@ -83,8 +83,13 @@ class Worker:
                 errors_amount=total_invalid,
                 total_processed=total_processed,
             )
-            if not completed:
-                print(f"Chunk {key} ya había sido completado en un intento previo, totales no duplicados")
+            if completed:
+                file_finalized = self._chunk_service.try_finalize_file(file_id=file_id)
+                if file_finalized:
+                    print(f"Archivo {file_id} completó todos sus chunks — disparando conciliación")
+                    # próximo paso: publicar evento (SQS/EventBridge) que arranca la Etapa 2
+                else:
+                    print(f"Chunk {id_chunk} completado, archivo {file_id} aún tiene chunks pendientes")
 
         except Exception as e:
             self._chunk_service.mark_failed(file_id=file_id,chunk_id=id_chunk,error=str(e))
