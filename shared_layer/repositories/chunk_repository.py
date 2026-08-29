@@ -154,14 +154,14 @@ class ChunkRepository:
                     "updated_at = :now"
                 ),
                 ConditionExpression=(
-                    "processed_chunks = total_chunks AND #status = :processing"
+                    "processed_chunks = total_chunks AND #status = :created"
                 ),
                 ExpressionAttributeNames={
                     "#status": "status",
                 },
                 ExpressionAttributeValues={
                     ":completed": {"S": "COMPLETED"},
-                    ":processing": {"S": "PROCESSING"},
+                    ":created": {"S": "CREATED"},
                     ":now": {"S": now_iso},
                 },
             )
