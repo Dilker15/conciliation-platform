@@ -37,3 +37,6 @@ class ChunkService:
             errors_amount=errors_amount,
             total_processed=total_processed,
         )
+    
+    def try_finalize_file(self, file_id: str) -> bool:
+        return self._chunk_repository.try_finalize_file(file_id=file_id)

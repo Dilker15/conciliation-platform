@@ -140,3 +140,37 @@ class ChunkRepository:
                 )
                 return False
             raise
+
+
+    def try_finalize_file(self, file_id: str) -> bool:
+        
+        now_iso = datetime.now(timezone.utc).isoformat()
+        try:
+            self._client.update_item(
+                TableName=self._table_name,
+                Key={
+                    "PK": {
+                        "S": f"FILE#{file_id}"
+                    },
+                    "SK": {
+                        "S": "INFO"
+                    }
+                },
+                UpdateExpression="SET #status = :completed, updated_at = :now",
+                ConditionExpression=(
+                    "processed_chunks = total_chunks AND #status = :created"
+                ),
+                ExpressionAttributeNames={
+                    "status": "status",
+                },
+                ExpressionAttributeValues={
+                    ":completed": {"S": "COMPLETED"},
+                    ":created": {"S": "CREATED"},
+                    ":now": {"S": now_iso},
+                },
+            )
+            return True
+        except ClientError as error:
+            if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return False
+            raise
