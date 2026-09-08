@@ -9,6 +9,7 @@ from services.settlement_service import SettlementService
 from services.settlement_error_service import SettlementErrorService
 from services.conciliation_file_service import ConciliationFileService
 from services.chunk_service import ChunkService
+from shared_layer.services.publish_event import PublishEventService
 
 
 class Worker:
@@ -21,7 +22,8 @@ class Worker:
                  parser:SettlementParser,
                  settlement_serv:SettlementService,
                  settlement_error_serv:SettlementErrorService,
-                 chunk_service:ChunkService
+                 chunk_service:ChunkService,
+                 event_service:PublishEventService
                  ):
         
         self._s3_service= s3_service
@@ -31,6 +33,7 @@ class Worker:
         self._settlement_service = settlement_serv
         self._settlement_error_service = settlement_error_serv
         self._chunk_service= chunk_service
+        self._event_service = event_service
 
 
 
@@ -87,7 +90,7 @@ class Worker:
                 file_finalized = self._chunk_service.try_finalize_file(file_id=file_id)
                 if file_finalized:
                     print(f"Archivo {file_id} completó todos sus chunks — disparando conciliación")
-                    # próximo paso: publicar evento (SQS/EventBridge) que arranca la Etapa 2
+                    self._event_service.file_parser_completed(file_id=file_id)
                 else:
                     print(f"Chunk {id_chunk} completado, archivo {file_id} aún tiene chunks pendientes")
 

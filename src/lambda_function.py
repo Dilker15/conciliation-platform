@@ -12,6 +12,10 @@ from services.conciliation_file_service import ConciliationFileService
 from shared_layer.repositories.conciliation_repository import RepositoryConciliation
 from shared_layer.repositories.chunk_repository import ChunkRepository
 from services.chunk_service import ChunkService
+from shared_layer.services.publish_event import PublishEventService
+import os
+
+event_bus = os.environ["BUS_EVENT"]
 
 worker = Worker(
     csv_reader= CSVReader(),
@@ -20,7 +24,9 @@ worker = Worker(
     parser= SettlementParser(),
     settlement_serv=SettlementService(SettlementRepository()),
     settlement_error_serv=SettlementErrorService(SettlementErrorRespository()),
-    chunk_service=ChunkService(repository=ChunkRepository())
+    chunk_service=ChunkService(repository=ChunkRepository()),
+    event_service=PublishEventService(event_bus=event_bus)
+    
 )
 
 def lambda_handler(event, context):
