@@ -1,6 +1,7 @@
 import boto3
 from shared_layer.models.settlement import Settlement
 import os
+from typing import Any
 
 class SettlementRepository:
 
@@ -48,3 +49,23 @@ class SettlementRepository:
                 self._table_name: requests
             }
         )
+
+
+    def get_settlements_paginated(self,file_id: str,limit: int = 5000,last_evaluated_key: dict[str,Any] | None = None) -> tuple[list[dict], dict | None]:
+
+        params = {"KeyConditionExpression": ("PK = :pk AND begins_with(SK, :sk)"),
+                  "ExpressionAttributeValues": {
+                  ":pk": f"FILE#{file_id}",
+                  ":sk": "SETTLEMENT#",
+                },
+                "Limit": limit,
+            }
+
+        if last_evaluated_key:
+            params["ExclusiveStartKey"] = last_evaluated_key
+
+        response = self._client.query(**params)
+
+        return (
+            response.get("Items", []),
+            response.get("LastEvaluatedKey"))
