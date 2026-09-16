@@ -90,7 +90,7 @@ class Worker:
                 file_finalized = self._chunk_service.try_finalize_file(file_id=file_id)
                 if file_finalized:
                     print(f"Archivo {file_id} completó todos sus chunks — disparando conciliación")
-                    self._event_service.file_parser_completed(file_id=file_id,)
+                    self._event_service.file_parser_completed(file_id=file_id,key_file=id_chunk)
                     print("after call publish event")
                 else:
                     print(f"Chunk {id_chunk} completado, archivo {file_id} aún tiene chunks pendientes")
