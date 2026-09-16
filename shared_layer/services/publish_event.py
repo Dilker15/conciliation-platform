@@ -13,7 +13,7 @@ class PublishEventService:
         print("inside publish event start file_id : ",file_id,"key_file : ",key_file)
         detail = {
             "file_id": file_id,
-            "date":key_file
+            "key_file":key_file
         }
         response = self._event.put_events(
             Entries=[
