@@ -1,8 +1,16 @@
 import json
 
 def lambda_handler(event, context):
-    # TODO implement
+    
+    file_id = event["file_id"]
+    queries = event["query_executions"]
+
+
+
     return {
         'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
+        'body': json.dumps({
+            "queries":queries,
+            "file_id":file_id
+        })
     }
