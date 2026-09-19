@@ -8,5 +8,5 @@ class CheckAthenQueryService:
         pass
 
 
-    def check_queries(self,id_queries:list[str])->bool:
+    def check_queries(self,id_queries:dict)->bool:
         pass

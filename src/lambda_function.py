@@ -4,8 +4,8 @@ def lambda_handler(event, context):
     
     file_id = event["file_id"]
     queries = event["query_executions"]
-
-
+    
+    print("QUERIES DATA :",queries)
 
     return {
         'statusCode': 200,
