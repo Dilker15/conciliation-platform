@@ -6,8 +6,8 @@ class CheckAthenaQueryService:
     def __init__(self):
         self._client = boto3.client("athena")
 
-
     def check_queries(self, id_queries: dict) -> dict:
+
         queries_status = {}
 
         for name, query_id in id_queries.items():
@@ -20,12 +20,22 @@ class CheckAthenaQueryService:
 
             queries_status[name] = state
 
-        all_succeeded = all(
+        if any(
+            state in ("FAILED", "CANCELLED")
+            for state in queries_status.values()
+        ):
+            status = "FAILED"
+
+        elif all(
             state == "SUCCEEDED"
             for state in queries_status.values()
-        )
+        ):
+            status = "SUCCEEDED"
+
+        else:
+            status = "RUNNING"
 
         return {
-            "all_succeeded": all_succeeded,
-            "queries": queries_status
+            "status": status,
+            "query_status": queries_status
         }
