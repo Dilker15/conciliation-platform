@@ -1,8 +1,11 @@
 import json
 
 def lambda_handler(event, context):
-    # TODO implement
+    print("QUERIES EXECUTED BY APPLY RESULT CONCILIATED : ", event)
     return {
         'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
+        'body': json.dumps({
+            "result":event,
+            
+        })
     }
