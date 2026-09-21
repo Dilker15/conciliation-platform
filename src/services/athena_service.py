@@ -59,6 +59,4 @@ class StartAthenaQueries:
             )
             query_executions[query_name] = response["QueryExecutionId"]
         
-
-        print("QUERY EXECUTIONS : ",query_executions)
         return {"file_id": file_id, "query_executions": query_executions}
