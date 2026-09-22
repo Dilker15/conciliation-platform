@@ -3,12 +3,13 @@ import os
 
 
 class StartAthenaQueries:
-
-    '''  QUERY_TEMPLATES_RULES = {
+    '''QUERY_TEMPLATES_RULES = {
         "unmatched_bank_only": """
             SELECT s.transaction_id, s.settlement_id, s.settled_amount
             FROM settlements s
-            LEFT JOIN transactions t ON s.transaction_id = t.transaction_id
+            LEFT JOIN transactions t
+                ON s.transaction_id = t.transaction_id
+                AND t.year = '{year}' AND t.month = '{month}' AND t.day = '{day}'
             WHERE s.file_id = '{file_id}' AND t.transaction_id IS NULL
         """,
         "unmatched_fintech_only": """
@@ -16,15 +17,21 @@ class StartAthenaQueries:
             FROM transactions t
             LEFT JOIN settlements s
                 ON t.transaction_id = s.transaction_id AND s.file_id = '{file_id}'
-            WHERE t.status = 'PENDING' AND s.transaction_id IS NULL
+            WHERE t.year = '{year}' AND t.month = '{month}' AND t.day = '{day}'
+            AND t.status = 'PENDING'
+            AND s.transaction_id IS NULL
         """,
         "mismatch": """
             SELECT s.transaction_id, s.settled_amount, t.amount AS expected_amount
             FROM settlements s
-            INNER JOIN transactions t ON s.transaction_id = t.transaction_id
-            WHERE s.file_id = '{file_id}' AND s.settled_amount <> t.amount
+            INNER JOIN transactions t
+                ON s.transaction_id = t.transaction_id
+                AND t.year = '{year}' AND t.month = '{month}' AND t.day = '{day}'
+            WHERE s.file_id = '{file_id}'
+            AND (s.settled_amount <> t.amount OR s.provider != t.provider)
         """,
-    }   '''
+    }'''
+    
     QUERY_TEMPLATES_RULES = {
          "select_all": """
             SELECT *

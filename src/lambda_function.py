@@ -13,6 +13,7 @@ def lambda_handler(event, context):
     result_queries_id = service_athena.handle(file_id=file_id)
 
     print("RESULT:", result_queries_id)
+    print("SETTLEMENT_DATE FILE : ", settlement_date)
 
     return {
         "file_id": file_id,
