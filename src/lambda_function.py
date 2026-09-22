@@ -10,7 +10,7 @@ def lambda_handler(event, context):
     file_id = event["file_id"]
     settlement_date = event["settlement_date"]
 
-    result_queries_id = service_athena.handle(file_id=file_id)
+    result_queries_id = service_athena.handle(file_id=file_id,settlement_date=settlement_date)
 
     print("RESULT:", result_queries_id)
     print("SETTLEMENT_DATE FILE : ", settlement_date)
