@@ -30,23 +30,30 @@ class StartAthenaQueries:
         """,
         "mismatch": """
             SELECT s.transaction_id,
-                   s.amount AS settled_amount,
-                   t.amount AS expected_amount,
-                   s.currency AS settled_currency,
-                   t.currency AS expected_currency
-            FROM settlements s
-            INNER JOIN transactions t
-                ON s.transaction_id = t.transaction_id
-                AND ({partition_filter})
-            WHERE s.file_id = '{file_id}'
-              AND s.status = 'SETTLED'
-              AND (ABS(s.amount - t.amount) > 0.005
-                   OR s.provider != t.payment_provider
-                   OR s.currency != t.currency)
+                    s.amount AS settled_amount,
+                    t.amount AS expected_amount,
+                    s.currency AS settled_currency,
+                    t.currency AS expected_currency,
+                    s.provider AS settled_provider,
+                    t.payment_provider AS expected_provider,
+                    concat_ws(',',
+                        IF(ABS(s.amount - t.amount) > 0.005, 'AMOUNT'),
+                        IF(s.currency != t.currency, 'CURRENCY'),
+                        IF(s.provider != t.payment_provider, 'PROVIDER')
+                    ) AS mismatch_reason
+                FROM settlements s
+                INNER JOIN transactions t
+                    ON s.transaction_id = t.transaction_id
+                    AND ({partition_filter})
+                WHERE s.file_id = '{file_id}'
+                AND s.status = 'SETTLED'
+                AND (ABS(s.amount - t.amount) > 0.005
+                    OR s.provider != t.payment_provider
+                    OR s.currency != t.currency)
         """,
     }
 
-    '''QUERY_TEMPLATES_RULES = {
+    '''QUERY_TEMPLATES_RULES = {      # Example to test Qeries on athena
          "select_all": """
             select *
             from settlements
