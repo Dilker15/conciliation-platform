@@ -1,10 +1,11 @@
 from services.apply_reconciliation_service import ApplyReconciliationService
 from services.s3_service import S3Service
+from repositories.reconciliation_repository import ReconciliationResultRepository
 import json
 
 
 
-service = ApplyReconciliationService(S3Service())
+service = ApplyReconciliationService(S3Service(),repository=ReconciliationResultRepository())
 
 
 
