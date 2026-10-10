@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 
 class StartAthenaQueries:
 
-    LOOKBACK_DAYS = 7  # ventana entre que se crea la transacción y el banco la liquida
-    '''
+    LOOKBACK_DAYS = 7  # suposicion de tiempo : ventana entre que se crea la transacción y el banco la liquida
     QUERY_TEMPLATES_RULES = {
         "unmatched_bank_only": """
             SELECT s.transaction_id,
@@ -26,7 +25,7 @@ class StartAthenaQueries:
             LEFT JOIN settlements s
                 ON t.transaction_id = s.transaction_id
             WHERE ({overdue_filter})
-              AND t.status = 'PENDING'
+              AND t.transaction_status = 'PENDING'
               AND s.transaction_id IS NULL
         """,
         "mismatch": """
@@ -42,17 +41,17 @@ class StartAthenaQueries:
             WHERE s.file_id = '{file_id}'
               AND s.status = 'SETTLED'
               AND (ABS(s.amount - t.amount) > 0.005
-                   OR s.provider != t.provider
+                   OR s.provider != t.payment_provider
                    OR s.currency != t.currency)
         """,
-    }'''
+    }
 
-    QUERY_TEMPLATES_RULES = {
+    '''QUERY_TEMPLATES_RULES = {
          "select_all": """
             select *
             from settlements
         """,
-    }
+    }'''
  
 
 
