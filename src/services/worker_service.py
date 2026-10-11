@@ -10,11 +10,12 @@ from services.settlement_error_service import SettlementErrorService
 from services.conciliation_file_service import ConciliationFileService
 from services.chunk_service import ChunkService
 from shared_layer.services.publish_event import PublishEventService
+from shared_layer.services.observability import get_logger                       
+
+logger = get_logger()                                                            
 
 
 class Worker:
-
-
 
     def __init__(self,s3_service:S3Service,
                  decompressor:Decompressor,
@@ -25,7 +26,7 @@ class Worker:
                  chunk_service:ChunkService,
                  event_service:PublishEventService
                  ):
-        
+
         self._s3_service= s3_service
         self._decompressor = decompressor
         self._csv_reader = csv_reader
@@ -35,16 +36,13 @@ class Worker:
         self._chunk_service= chunk_service
         self._event_service = event_service
 
-
-
     def process(self, bucket_name: str, key: str, file_id: str):
         start = time.perf_counter()
         id_chunk = key.removesuffix(".csv.gz")
 
-
         registered = self._chunk_service.register_chunk(file_id=file_id,chunk_id=id_chunk,bucket_name=bucket_name,bucket_key=key)
         if not registered:
-            print("Chunk ya completado o en proceso activo:", key)
+            logger.info("chunk_skipped", extra={"reason": "already_completed_or_in_progress"})   
             return
 
         try:
@@ -89,25 +87,25 @@ class Worker:
             if completed:
                 file_finalized = self._chunk_service.try_finalize_file(file_id=file_id)
                 if file_finalized:
-                    print(f"Archivo {file_id} completó todos sus chunks — disparando conciliación")
+                    logger.info("file_finalized", extra={"trigger_chunk": id_chunk})        
                     self._event_service.file_parser_completed(file_id=file_id,key_file=id_chunk)
-                    print("after call publish event")
+                    logger.info("conciliation_triggered", extra={"event_key": id_chunk})    
                 else:
-                    print(f"Chunk {id_chunk} completado, archivo {file_id} aún tiene chunks pendientes")
+                    logger.debug("file_pending", extra={"chunk_id": id_chunk})              
+            else:                                                                           
+                logger.warning("chunk_totals_not_applied", extra={                         
+                    "reason": "chunk_not_in_processing_state",
+                    "chunk_id": id_chunk,
+                })
 
         except Exception as e:
+            logger.exception("chunk_failed")                                                
             self._chunk_service.mark_failed(file_id=file_id,chunk_id=id_chunk,error=str(e))
-            print(f"Error processing chunk: {key}")
             raise
 
         elapsed = time.perf_counter() - start
-        print(
-            f"Processed: {total_processed}, Invalid: {total_invalid}, "
-            f"Time: {elapsed:.4f}s Chunk Processed: {key}"
-        )
-
-        
-
-
-
-        
+        logger.info("chunk_processed", extra={                                              
+            "records_total": total_processed,
+            "records_invalid": total_invalid,
+            "duration_ms": int(elapsed * 1000),
+        })

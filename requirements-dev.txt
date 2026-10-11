@@ -10,3 +10,4 @@ six==1.17.0
 types-awscrt==0.34.1
 types-s3transfer==0.16.0
 urllib3==2.7.0
+aws-lambda-powertools
