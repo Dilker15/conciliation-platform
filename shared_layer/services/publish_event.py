@@ -1,5 +1,9 @@
 import json
+import time                                                                      
 import boto3
+from shared_layer.services.observability import get_logger                       
+
+logger = get_logger()                                                            
 
 
 class PublishEventService:
@@ -10,7 +14,7 @@ class PublishEventService:
 
 
     def file_parser_completed(self, file_id: str,key_file:str) -> None:
-        print("inside publish event start file_id : ",file_id,"key_file : ",key_file)
+        start = time.perf_counter()                                              
         detail = {
             "file_id": file_id,
             "key_file":key_file
@@ -26,7 +30,17 @@ class PublishEventService:
             ]
         )
 
-        print("event publised to eventBridge ")
-        print(response)
-        print("event publised to eventBridge ")
-
+        if response.get("FailedEntryCount", 0) > 0:                              
+            logger.error("event_publish_rejected", extra={                       
+                "event_bus": self._event_bus,
+                "detail_type": "parserCompleted",
+                "failed_entries": response.get("Entries"),
+            })
+        else:                                                                    
+            logger.info("event_published", extra={                               
+                "event_bus": self._event_bus,
+                "source": "conciliation",
+                "detail_type": "parserCompleted",
+                "event_id": response["Entries"][0].get("EventId"),
+                "duration_ms": int((time.perf_counter() - start) * 1000),
+            })

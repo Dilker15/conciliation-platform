@@ -1,13 +1,12 @@
 import boto3
 from botocore.exceptions import ClientError
 from shared_layer.models.chunk import Chunk
+from shared_layer.services.observability import get_logger                       
 from datetime import datetime, timedelta, timezone
-import logging
 import os
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = get_logger()                                                            
 
 
 class ChunkRepository:
@@ -55,10 +54,10 @@ class ChunkRepository:
             return True
         except ClientError as error:
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                logger.warning(
-                    "El chunk ya fue completado o está siendo procesado activamente: file_id=%s chunk_id=%s",
-                    data.file_id, data.chunk_id,
-                )
+                logger.debug("chunk_registration_rejected", extra={              
+                    "chunk_id": data.chunk_id,
+                    "lease_ttl_seconds": self.LEASE_TTL_SECONDS,
+                })
                 return False
             raise
 
@@ -133,11 +132,10 @@ class ChunkRepository:
 
         except ClientError as error:
             if error.response["Error"]["Code"] == "TransactionCanceledException":
-                logger.warning(
-                    "Chunk ya estaba completado, no se vuelven a sumar los totales: "
-                    "file_id=%s chunk_id=%s",
-                    file_id, chunk_id,
-                )
+                logger.warning("chunk_transaction_cancelled", extra={            
+                    "chunk_id": chunk_id,
+                    "cancellation_reasons": error.response.get("CancellationReasons"),
+                })
                 return False
             raise
 

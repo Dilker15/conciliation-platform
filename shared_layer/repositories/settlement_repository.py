@@ -1,7 +1,11 @@
+import time                                                                      
 import boto3
 from shared_layer.models.settlement import Settlement
+from shared_layer.services.observability import get_logger                      
 import os
 from typing import Any
+
+logger = get_logger()                                                            
 
 class SettlementRepository:
 
@@ -10,6 +14,7 @@ class SettlementRepository:
         self._table_name = os.environ["CONCILIATION_TABLE_NAME"]
 
     def create_settlement_batch(self, settlements: list[Settlement]):
+        start = time.perf_counter()                                              
         requests = []
 
         for settlement in settlements:
@@ -50,9 +55,22 @@ class SettlementRepository:
             }
         )
 
+        unprocessed = response.get("UnprocessedItems", {}).get(self._table_name, [])   
+        if unprocessed:                                                                
+            logger.error("settlements_unprocessed", extra={                            
+                "requested": len(requests),
+                "unprocessed": len(unprocessed),
+            })
+        else:                                                                         
+            logger.debug("settlement_batch_written", extra={                           
+                "items": len(requests),
+                "duration_ms": int((time.perf_counter() - start) * 1000),
+            })
+
 
     def get_settlements_paginated(self,file_id: str,limit: int = 5000,last_evaluated_key: dict[str,Any] | None = None) -> tuple[list[dict], dict | None]:
 
+        start = time.perf_counter()                                              
         params = {"KeyConditionExpression": ("PK = :pk AND begins_with(SK, :sk)"),
                   "ExpressionAttributeValues": {
                   ":pk": f"FILE#{file_id}",
@@ -65,6 +83,12 @@ class SettlementRepository:
             params["ExclusiveStartKey"] = last_evaluated_key
 
         response = self._client.query(**params)
+
+        logger.debug("settlements_page_read", extra={                            
+            "items": len(response.get("Items", [])),
+            "has_more": "LastEvaluatedKey" in response,
+            "duration_ms": int((time.perf_counter() - start) * 1000),
+        })
 
         return (
             response.get("Items", []),
