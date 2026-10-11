@@ -3,9 +3,9 @@ from datetime import datetime
 
 from shared_layer.models.settlement import Settlement
 from shared_layer.models.settlement_errors import SettlementError
-from shared_layer.services.observability import get_logger                       
+from shared_layer.services.observability import get_logger                       # LOG
 
-logger = get_logger()                                                            
+logger = get_logger()                                                            # LOG
 
 
 class SettlementParser:
@@ -30,7 +30,7 @@ class SettlementParser:
         settlement_date = self._parse_date(row.get("settlement_date"), errors)
 
         if errors:
-            logger.debug("row_invalid", extra={"row_number": row_number, "errors": errors})   
+            logger.debug("row_invalid", extra={"row_number": row_number, "errors": errors})   # LOG
             return SettlementError(
                 errors=errors,
                 file_id=file_id,
@@ -50,4 +50,60 @@ class SettlementParser:
             settlement_date=settlement_date,
         )
 
-   
+    def _required(self,row: dict,field: str,errors: list[str]) -> str | None:
+
+        value = row.get(field)
+
+        if value is None:
+            errors.append(f"Missing required field: {field}")
+            return None
+
+        value = value.strip()
+
+        if not value:
+            errors.append(f"Field cannot be empty: {field}")
+            return None
+
+        return value
+
+    def _parse_amount(self,value: str | None,errors: list[str]) -> Decimal | None:
+
+        if value is None:
+            errors.append("Missing required field: settled_amount")
+            return None
+
+        value = value.strip()
+
+        if not value:
+            errors.append("Field cannot be empty: settled_amount")
+            return None
+
+        try:
+            amount = Decimal(value)
+        except Exception:
+            errors.append(f"Invalid settled_amount: {value}")
+            return None
+
+        if amount < 0:
+            errors.append(f"settled_amount cannot be negative: {value}")
+            return None
+
+        return amount
+
+    def _parse_date(self,value: str | None,errors: list[str]) -> datetime | None:
+
+        if value is None:
+            errors.append("Missing required field: settlement_date")
+            return None
+
+        value = value.strip()
+
+        if not value:
+            errors.append("Field cannot be empty: settlement_date")
+            return None
+
+        try:
+            return datetime.strptime(value, self.DATE_FORMAT)
+        except ValueError:
+            errors.append(f"Invalid settlement_date: {value}")
+            return None
