@@ -1,6 +1,10 @@
+import time                                                                     
 import boto3
 import os
 from datetime import datetime, timedelta
+from shared_layer.services.observability import get_logger                      
+
+logger = get_logger()                                                           
 
 
 class StartAthenaQueries:
@@ -59,7 +63,7 @@ class StartAthenaQueries:
             from settlements
         """,
     }'''
- 
+
 
 
     def __init__(self):
@@ -90,6 +94,7 @@ class StartAthenaQueries:
         )
 
     def handle(self, file_id: str, settlement_date: str) -> dict:
+        start = time.perf_counter()                                             
         safe_file_id = self._sanitize(file_id)
         date = datetime.fromisoformat(settlement_date)
 
@@ -104,12 +109,30 @@ class StartAthenaQueries:
                 partition_filter=partition_filter,
                 overdue_filter=overdue_filter,
             )
+            logger.debug("athena_query_sql", extra={"query_name": query_name, "sql": query_string})   
 
-            response = self._athena.start_query_execution(
-                QueryString=query_string,
-                QueryExecutionContext={"Database": self._database},
-                ResultConfiguration={"OutputLocation": self._output_location},
-            )
+            try:                                                                 
+                response = self._athena.start_query_execution(
+                    QueryString=query_string,
+                    QueryExecutionContext={"Database": self._database},
+                    ResultConfiguration={"OutputLocation": self._output_location},
+                )
+            except Exception:                                                   
+                logger.exception("athena_query_start_failed", extra={"query_name": query_name})       
+                raise                                                            
             query_executions[query_name] = response["QueryExecutionId"]
+            logger.info("athena_query_started", extra={                         
+                "query_name": query_name,
+                "query_execution_id": response["QueryExecutionId"],
+            })
+
+        logger.info("athena_queries_started", extra={                            
+            "settlement_date": date.date().isoformat(),
+            "window_from": (date - timedelta(days=self.LOOKBACK_DAYS)).date().isoformat(),
+            "window_to": date.date().isoformat(),
+            "overdue_day": (date - timedelta(days=self.LOOKBACK_DAYS)).date().isoformat(),
+            "queries": len(query_executions),
+            "duration_ms": int((time.perf_counter() - start) * 1000),
+        })
 
         return {"file_id": file_id, "query_executions": query_executions}
