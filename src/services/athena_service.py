@@ -8,9 +8,9 @@ logger = get_logger()
 
 
 class StartAthenaQueries:
-
+    # reglas (queries) para validar conciliaciones
     LOOKBACK_DAYS = 7  # suposicion de tiempo : ventana entre que se crea la transacción y el banco la liquida
-    QUERY_TEMPLATES_RULES = {
+    QUERY_TEMPLATES_RULES = {   
         "unmatched_bank_only": """
             SELECT s.transaction_id,
                    s.settlement_id,
@@ -55,6 +55,25 @@ class StartAthenaQueries:
                     OR s.provider != t.payment_provider
                     OR s.currency != t.currency)
         """,
+        "summary": """
+                SELECT status, COUNT(*) AS total
+                FROM (
+                    SELECT CASE
+                            WHEN s.status <> 'SETTLED' THEN 'DECLINED'
+                            WHEN t.transaction_id IS NULL THEN 'UNMATCHED_BANK_ONLY'
+                            WHEN COALESCE(ABS(s.amount - t.amount), 1) > 0.005
+                                OR s.provider IS DISTINCT FROM t.payment_provider
+                                OR s.currency IS DISTINCT FROM t.currency THEN 'MISMATCH'
+                            ELSE 'MATCHED'
+                        END AS status
+                    FROM settlements s
+                    LEFT JOIN transactions t
+                        ON s.transaction_id = t.transaction_id
+                        AND ({partition_filter})
+                    WHERE s.file_id = '{file_id}'
+                ) classified
+                GROUP BY status
+            """,
     }
 
     '''QUERY_TEMPLATES_RULES = {      # Example to test Qeries on athena
