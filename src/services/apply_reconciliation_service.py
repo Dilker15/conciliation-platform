@@ -1,13 +1,20 @@
 import csv
 import os
+import time                                                                     
 from datetime import datetime, timezone
 from services.s3_service import S3Service
 from config import ATHENA_RESULTS_BUCKET, TMP_DIRECTORY
 from repositories.reconciliation_repository import ReconciliationResultRepository
+from shared_layer.services.observability import get_logger                      
+
+logger = get_logger()                                                           
 
 class ApplyReconciliationService:
 
     BATCH_SIZE = 25  # máximo de batch_write_item para dynamoDB
+
+    SUMMARY_QUERY = "summary"                                                   
+    SUMMARY_STATUSES = ("MATCHED", "MISMATCH", "UNMATCHED_BANK_ONLY", "DECLINED") 
 
     RULES = {
         "mismatch": {"rule": "MISMATCH", "prefix": "TXN", "id_column": "transaction_id"},
@@ -20,15 +27,25 @@ class ApplyReconciliationService:
     def __init__(self, s3_serv: S3Service, repository: ReconciliationResultRepository):
         self._s3_service = s3_serv
         self._repository = repository
-        
+
 
     def apply_reconciliation(self, queries_execution: dict, file_id: str) -> dict:
+        start = time.perf_counter()                                             
         counts = {}
+        summary = None                                                          
+        logger.info("reconciliation_started", extra={"queries": list(queries_execution.keys())})   
 
         for query_type, result_id in queries_execution.items():
+            if query_type == self.SUMMARY_QUERY:                                 
+                summary = self._read_summary(result_id)                          
+                continue                                                        
+
             rule = self.RULES.get(query_type)
             if rule is None:
-                print(f"Regla no exist: {query_type}")
+                logger.warning("rule_skipped", extra={                           
+                    "query_name": query_type,
+                    "reason": "no_rule_defined",
+                })
                 continue
 
             route_file = self._s3_service.download(
@@ -36,17 +53,54 @@ class ApplyReconciliationService:
                 route_key=TMP_DIRECTORY,
                 name=f"{result_id}.csv",
             )
+            logger.debug("result_file_downloaded", extra={                       
+                "query_name": query_type,
+                "query_execution_id": result_id,
+                "bytes": os.path.getsize(route_file),
+            })
 
             try:
                 counts[query_type] = self._process_csv(route_file, file_id, rule)
             finally:
                 os.remove(route_file)
 
-        return counts
+            logger.info("rule_applied", extra={                                 
+                "query_name": query_type,
+                "rule": rule["rule"],
+                "rows": counts[query_type],
+            })
+
+        if summary is None:                                                     
+            logger.warning("summary_missing", extra={"reason": "no_summary_query_in_execution"})  
+
+        logger.info("reconciliation_applied", extra={                          
+            "rows_written_total": sum(counts.values()),
+            "rows_by_rule": counts,
+            "duration_ms": int((time.perf_counter() - start) * 1000),
+        })
+
+        return {"counts": counts, "summary": summary}                           
+
+    def _read_summary(self, result_id: str) -> dict:                            
+        route_file = self._s3_service.download(
+            bucket_name=ATHENA_RESULTS_BUCKET,
+            route_key=TMP_DIRECTORY,
+            name=f"{result_id}.csv",
+        )
+        try:
+            with open(route_file, newline="", encoding="utf-8") as f:
+                found = {row["status"]: int(row["total"]) for row in csv.DictReader(f)}
+        finally:
+            os.remove(route_file)
+
+      
+        summary = {status: found.get(status, 0) for status in self.SUMMARY_STATUSES}
+        logger.info("summary_read", extra={"summary": summary, "query_execution_id": result_id})
+        return summary
 
     def _process_csv(self, route_file: str, file_id: str, rule: dict) -> int:
         total = 0
-        batch: dict[str, dict] = {}  # indexado por SK para evitar duplicados
+        batch: dict[str, dict] = {}
 
         with open(route_file, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
