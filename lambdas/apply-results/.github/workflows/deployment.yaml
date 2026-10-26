@@ -1,0 +1,85 @@
+name: Deploy Lambda conciliation-applyReconciliation-results
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  LAMBDA_FUNCTION_NAME: conciliation-applyReconciliation-results
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build Lambda package
+        run: |
+          set -e
+
+          echo "Eliminando build anterior..."
+
+          rm -rf build
+          rm -f lambda.zip
+
+          echo "Creando carpeta build..."
+
+          mkdir build
+
+          echo "Instalando dependencias..."
+
+          pip install -r requirements.txt -t build
+
+          echo "Copiando código fuente..."
+
+          cp -R src/* build/
+
+          echo "Generando lambda.zip..."
+
+          cd build
+          zip -rq ../lambda.zip .
+          cd ..
+
+          echo "Build completado."
+          echo "Archivo generado: lambda.zip"
+
+      - name: Check package
+        run: |
+          echo "Tamaño del package:"
+          du -h lambda.zip
+
+          echo "Contenido:"
+          unzip -l lambda.zip | head -30
+
+      - name: Deploy Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://lambda.zip \
+            --publish
+
+      - name: Deployment Success
+        run: |
+          echo "Lambda deployed successfully!"
+          echo "Function: ${{ env.LAMBDA_FUNCTION_NAME }}"
+          echo "Region: ${{ env.AWS_REGION }}"
