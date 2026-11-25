@@ -4,7 +4,7 @@ Sistema de conciliación de archivos de liquidaciones (*settlements*) contra tra
 
 > Proyecto personal de portafolio. Los datos usados son de prueba.
 
-![Arquitectura](docs/arquitectura.png)
+![Arquitectura](arquitectura.png)
 
 ## Qué resuelve
 
